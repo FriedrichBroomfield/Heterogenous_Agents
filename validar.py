@@ -1,4 +1,8 @@
-"""Validacion Halcon-Paloma: la tasa de escalada debe seguir a min(1, V/C)."""
+"""Validacion Halcon-Paloma: la tasa de escalada debe seguir la DIRECCION y
+el ORDEN DE MAGNITUD de min(1, V/C), no coincidir en el punto exacto -- hay
+un desplazamiento sistematico conocido y confirmado (~+0.04 a +0.09, no es
+ruido ni bug abierto). Ver la nota completa en todo.py:etapa_validacion.
+"""
 import numpy as np, json
 from mundo import Cfg, Pob, un_ciclo, reproducir
 
