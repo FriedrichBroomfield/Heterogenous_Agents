@@ -23,7 +23,10 @@ if __name__ == "__main__":
             cfg, reg, pob = corre(gasto, seed=s)
             if len(reg["escalada"]) > 60:
                 obs.append(np.mean(reg["escalada"][-50:]))
-        C = 2*gasto; pred = min(1.0, cfg.V_bocado / C)
+        C = 2*gasto
+        # p* = (V - 2*gasto_escalar) / C: escalar paga gasto_escalar aunque
+        # el rival ceda, no solo cuando hay pelea. Ver mundo.py, un_ciclo.
+        pred = max(0.0, min(1.0, (cfg.V_bocado - 2 * cfg.gasto_escalar) / C))
         res.append(dict(C=C, pred=pred, obs=float(np.mean(obs)), sd=float(np.std(obs)),
                         n=len(obs)))
         print(f"  C={C:4.1f}  V/C={cfg.V_bocado/C:5.3f}  prediccion={pred:5.3f}  "

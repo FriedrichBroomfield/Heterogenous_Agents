@@ -52,7 +52,9 @@ def etapa_validacion(rapido):
             if len(reg["escalada"]) > 60:
                 obs.append(np.mean(reg["escalada"][-50:]))
         C = 2 * g
-        pred = min(1.0, cfg.V_bocado / C)
+        # p* = (V - 2*gasto_escalar) / C, no V/C: escalar paga gasto_escalar
+        # incluso cuando el rival cede (mundo.py, un_ciclo, rama "e1 or e2").
+        pred = max(0.0, min(1.0, (cfg.V_bocado - 2 * cfg.gasto_escalar) / C))
         o = float(np.mean(obs)) if obs else float("nan")
         res.append(dict(C=C, pred=pred, obs=o,
                         sd=float(np.std(obs)) if obs else 0.0, n=len(obs)))

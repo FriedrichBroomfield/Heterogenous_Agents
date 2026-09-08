@@ -37,9 +37,12 @@ def main(path="prejuicio.json"):
     print(f"  razon (prej/real):  media {np.nanmean(raz):.2f}  "
           f"mediana {np.nanmedian(raz):.2f}  rango {np.nanmin(raz):.2f}-{np.nanmax(raz):.2f}")
     print(f"  semillas con razon > 1: {int(np.nansum(raz > 1))}/{len(raz)}")
-    print(f"  diferencia (prej-real): media {dif.mean():+.4f} +- {dif.std()/np.sqrt(len(dif)):.4f}")
+    # ddof=1: dif.std() con default (ddof=0) subestima el error estandar en
+    # un factor exacto sqrt(n/(n-1)), que infla z. Con n=3 eso es 1.22x --
+    # justo la diferencia entre "justo debajo del umbral" y no.
+    print(f"  diferencia (prej-real): media {dif.mean():+.4f} +- {dif.std(ddof=1)/np.sqrt(len(dif)):.4f}")
     print("  [la razon tiene denominador chico y es inestable; la diferencia no]")
-    z = dif.mean() / (dif.std() / np.sqrt(len(dif)) + 1e-12)
+    z = dif.mean() / (dif.std(ddof=1) / np.sqrt(len(dif)) + 1e-12)
     print(f"  z de la diferencia = {z:+.2f}  -> "
           f"{'distinta de cero' if abs(z) > 2 else 'NO distinta de cero'}")
 
@@ -47,7 +50,7 @@ def main(path="prejuicio.json"):
     d_inf = np.array([m(r["prej_info"]) - m(r["real_info"]) for r in S])
     for i, d in enumerate(d_inf):
         print(f"  semilla {i}: {d:+.4f}")
-    z = d_inf.mean() / (d_inf.std() / np.sqrt(len(d_inf)) + 1e-12)
+    z = d_inf.mean() / (d_inf.std(ddof=1) / np.sqrt(len(d_inf)) + 1e-12)
     print(f"  media {d_inf.mean():+.4f}  z = {z:+.2f}  "
           f"({int((d_inf < 0).sum())}/{len(d_inf)} semillas sub-usan)")
 
@@ -78,7 +81,7 @@ def main(path="prejuicio.json"):
     print("\nDIVERGENCIA ENTRE SEMILLAS (coef. de variacion)")
     for k in ("w_tes", "w_cre", "olvido", "conf", "err_info"):
         v = np.array([m(r[k]) for r in S])
-        cv = v.std() / abs(v.mean()) if v.mean() else np.nan
+        cv = v.std(ddof=1) / abs(v.mean()) if v.mean() else np.nan
         flag = "  <-- ALTA: promediar semillas no describe a ninguna" if cv > .25 else ""
         print(f"  {k:9s} media={v.mean():7.3f}  cv={cv:.2f}{flag}")
 
@@ -122,6 +125,28 @@ def main(path="prejuicio.json"):
         print(f"  semilla {i}: div={np.nanmean(d[u]):.4f}  "
               f"ciclos con <2 nidos poblados: {nn}/{len(d)}"
               + ("  <-- linaje unico por tramos" if nn > 10 else ""))
+
+    print("\nDIVERGENCIA DE p0 DENTRO DE LA CORRIDA (halcon puro vs paloma pura vs mixta)")
+    print("  el equilibrio mixto de Halcon-Paloma admite dos soluciones con la misma")
+    print("  media: todos jugando la estrategia mixta p*, o la poblacion partida en")
+    print("  halcones y palomas puros que promedian a p*. Esto mide cual de las dos.")
+    print("  *** DESCRIPTIVO: falta el nulo (ver PROMPT_TRASPASO / nota del revisor).")
+    print("      sd_p0 alto NO prueba polimorfismo mantenido por seleccion -- podria")
+    print("      ser deriva+mutacion sin nada que lo sostenga. El test que corresponde")
+    print("      (regla 6) es invasibilidad mutua, no esto. ***")
+    for nom, grupo in (("sin_marcas", S0), ("con_marcas", S)):
+        if not grupo:
+            continue
+        print(f"  {nom}:")
+        for i, r in enumerate(grupo):
+            if "sd_p0" not in r or not r["sd_p0"]:
+                print(f"    semilla {i}: (sin datos, json viejo -- correr de nuevo)")
+                continue
+            sd = m(r["sd_p0"]); fh = m(r["frac_halcon"]); fp = m(r["frac_paloma"])
+            bimodal = (fh + fp) > 0.3
+            print(f"    semilla {i}: p0_media={m(r['p0']):.3f}  sd_p0={sd:.3f}  "
+                  f"halcon(p0>.8)={fh:.2f}  paloma(p0<.2)={fp:.2f}"
+                  + ("  <-- bimodal: no es una unica estrategia mixta" if bimodal else ""))
 
 
 if __name__ == "__main__":

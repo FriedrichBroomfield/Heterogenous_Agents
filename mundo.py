@@ -90,7 +90,11 @@ class Cfg:
     @property
     def C(self):
         """Costo en el sentido de Halcon-Paloma: ambos escalan ->
-        pago esperado V/2 - gasto_pelea = (V - C)/2, luego C = 2*gasto."""
+        pago esperado V/2 - gasto_pelea = (V - C)/2, luego C = 2*gasto.
+        OJO: esto NO es la prediccion de equilibrio completa. El escalador
+        tambien paga gasto_escalar cuando el rival cede (mundo.py linea
+        ~219), asi que la condicion de indiferencia real da
+        p* = (V - 2*gasto_escalar) / C, no V/C. Ver validar.py / todo.py."""
         return 2 * self.gasto_pelea
 
 
