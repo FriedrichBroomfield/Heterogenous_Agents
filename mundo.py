@@ -87,6 +87,24 @@ class Cfg:
     marcas = True          # False -> validacion Halcon-Paloma
     ciclos = 400
 
+    depredadores = False   # False -> etapa 1, sin riesgo de depredacion
+    frac_peligro = 0.15    # fraccion de parches peligrosos, sorteada por CICLO
+                            # (no por paso: el peligro es estable dentro del
+                            # ciclo, para que una señal de alerta mas adelante
+                            # tenga algo persistente de que avisar)
+    p_ataque = 0.07         # prob. de ataque por estar en un parche peligroso
+                            # en un paso dado (no hace falta disputar fruta).
+                            # Calibrado para que ataques/agente/ciclo ~ 0.4
+                            # (T*frac_peligro*p_ataque) y muerte por
+                            # depredacion ~6%/ciclo -- riesgo real, no
+                            # dominante frente a edad_max=6 (~17%/ciclo en
+                            # regimen estacionario). Con 0.35 (primer intento)
+                            # colapsaba la poblacion de 300 a 90 en 4 ciclos.
+    dano_ataque = 0.8       # energia perdida si atacan -- fisico, igual que
+                            # el costo de pelea, no un parametro simbolico
+    p_muerte_ataque = 0.15  # prob. de que el ataque sea fatal, dado que hubo
+                            # ataque
+
     @property
     def C(self):
         """Costo en el sentido de Halcon-Paloma: ambos escalan ->
@@ -168,6 +186,8 @@ def un_ciclo(pob, fruta, rng, reg):
     nid_b = np.zeros((cfg.n_nidos, 2, cfg.n_val))
 
     n_esc = n_enc = n_pelea = 0
+    n_ataques = n_muertes_depred = 0
+    peligroso = rng.random(cfg.L) < cfg.frac_peligro if cfg.depredadores else None
 
     for t in range(cfg.T):
         # movimiento simple: paso aleatorio (el forrajeo dirigido es etapa 2)
@@ -179,6 +199,23 @@ def un_ciclo(pob, fruta, rng, reg):
         idx_por_parche = {}
         for i, p in zip(orden, pos_o):
             idx_por_parche.setdefault(int(p), []).append(i)
+
+        # riesgo de depredacion: por ESTAR en un parche peligroso este paso,
+        # no por disputar fruta -- independiente del forrajeo de abajo. La
+        # muerte se resuelve recien en reproducir() (e muy negativa), igual
+        # que la muerte por energia de una pelea perdida: es consistente con
+        # como el resto del modelo ya difiere toda muerte al fin del ciclo.
+        if cfg.depredadores:
+            for p, grupo in idx_por_parche.items():
+                if not peligroso[p]:
+                    continue
+                for i in grupo:
+                    if rng.random() < cfg.p_ataque:
+                        n_ataques += 1
+                        pob.e[i] -= cfg.dano_ataque
+                        if rng.random() < cfg.p_muerte_ataque:
+                            n_muertes_depred += 1
+                            pob.e[i] = -999.0
 
         for p, grupo in idx_por_parche.items():
             if fruta[p] < cfg.V_bocado:
@@ -245,6 +282,9 @@ def un_ciclo(pob, fruta, rng, reg):
 
     reg["escalada"].append(n_esc / max(1, 2 * n_enc))
     reg["peleas"].append(n_pelea / max(1, n_enc))
+    if cfg.depredadores:
+        reg.setdefault("ataques", []).append(n_ataques)
+        reg.setdefault("muertes_depred", []).append(n_muertes_depred)
     return fruta
 
 
