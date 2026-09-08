@@ -75,6 +75,9 @@ class Cfg:
 
     mut = 0.05             # sd de mutacion de rasgos
     n_val = 3              # valores por marca
+    var_tam = 0.3          # semi-rango inicial de tamano: tam ~ U(1-v, 1+v)
+                            # var_tam=0.0 -> sin variacion de tamano (control
+                            # de falsacion del sesgo hacia arriba en Halcon-Paloma)
 
     marcas = True          # False -> validacion Halcon-Paloma
     ciclos = 400
@@ -99,7 +102,7 @@ class Pob:
         self.w_cre = rng.uniform(0.0, 1.0, n)
         self.w_tes = rng.uniform(0.0, 0.5, n)
         self.olvido = rng.uniform(0.85, 0.99, n)
-        self.tam = rng.uniform(0.7, 1.3, n)
+        self.tam = rng.uniform(1 - cfg.var_tam, 1 + cfg.var_tam, n)
         self.lesionado = np.zeros(n)
         self.tag = rng.integers(0, cfg.n_val, n)          # marca arbitraria
         self.nido = rng.integers(0, cfg.n_nidos, n)
@@ -301,3 +304,27 @@ def medir_verdad(pob):
                 continue
             out[d, k] = float(np.mean(s[:, None] / (s[:, None] + s[sel][None, :])))
     return out
+
+
+# ----------------------------------------------------------------- driver
+
+def corre_ciclos(cfg, seed, ciclos, post_ciclo=None):
+    """Corre la simulacion ciclos veces: forrajeo, vuelta al nido,
+    reproduccion. post_ciclo(pob, reg), si se pasa, se llama al final de
+    cada ciclo para registrar metricas especificas del experimento (no
+    pertenecen al mundo en si). Si la poblacion se extingue, corta ahi:
+    la serie queda mas corta y eso ya es una senal de alarma en si misma.
+    """
+    rng = np.random.default_rng(seed)
+    pob = Pob(cfg, rng)
+    fruta = np.full(cfg.L, cfg.K_fruta)
+    reg = {"escalada": [], "peleas": [], "n": []}
+    for _ in range(ciclos):
+        if pob.n() == 0:
+            break
+        fruta = un_ciclo(pob, fruta, rng, reg)
+        reproducir(pob, rng)
+        reg["n"].append(pob.n())
+        if post_ciclo is not None:
+            post_ciclo(pob, reg)
+    return reg, pob
