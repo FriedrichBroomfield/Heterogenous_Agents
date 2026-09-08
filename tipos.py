@@ -39,13 +39,20 @@ ARQUETIPOS = [
 
 
 def corre(ciclos=1200, seed=0, gasto=1.5, var_tam=0.5, marcas=True, disp_nido=0.0,
-          corte_dominancia=False, umbral_dom=0.97, ventana_dom=100):
+          corte_dominancia=False, umbral_dom=1.0, ventana_dom=200):
     """corte_dominancia: si True, corta la corrida apenas un arquetipo se
     mantiene por encima de umbral_dom durante ventana_dom ciclos seguidos
     -- ahorra ciclos cuando la pregunta es solo "quien gana", pero trunca
     la deriva post-fijacion de p0_por_tipo/w_tes_por_tipo. Por eso NO es el
     default: para ver convergencia de disposiciones de aprendizaje hace
-    falta la corrida completa."""
+    falta la corrida completa.
+
+    umbral_dom=1.0 (fijacion exacta, no un umbral laxo) es deliberado: tipo
+    se hereda SIN mutacion (a diferencia de p0/w_tes/etc.), asi que una vez
+    que un arquetipo llega a 0 individuos es IRREVERSIBLE -- no hay como
+    reintroducirlo. Llegar a 1.0 ya es un evento permanente; ventana_dom
+    es solo margen de seguridad contra un conteo transitorio raro, no
+    porque 1.0 pueda revertirse."""
     cfg = Cfg(); cfg.marcas = marcas; cfg.gasto_pelea = gasto; cfg.ciclos = ciclos
     cfg.disp_nido = disp_nido
     rng = np.random.default_rng(seed)
