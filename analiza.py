@@ -32,6 +32,18 @@ def main(path="prejuicio.json"):
               f"{m(r['err_arb']):>8.4f} {pa:>9.4f} {ra:>9.4f} "
               f"{raz[-1]:>6.2f} {dif[-1]:>+8.4f}")
 
+    print("\nPRECONDICION: ¿el tope N_max limito nacimientos alguna vez?")
+    print("  si actuo, frena a TODOS por igual (no es una poda dirigida a una")
+    print("  minoria), pero igual trunca la dinamica de seleccion -- si esto da")
+    print("  que si, el diferencial de reproduccion de mas abajo hay que leerlo")
+    print("  con cuidado. Antes esto se mostraba como un panel entero (casi")
+    print("  siempre vacio); una pregunta binaria no necesita una figura.")
+    for i, r in enumerate(S):
+        tope = r.get("tope_nmax", [])
+        n_tope = sum(1 for t in tope if t)
+        print(f"  semilla {i}: tope activo en {n_tope}/{len(tope)} ciclos"
+              + ("  <-- N_max SI limito, revisar" if n_tope else ""))
+
     raz, dif = np.array(raz, float), np.array(dif, float)
     print(f"\nSOBRE-DISCRIMINACION ARBITRARIA")
     print(f"  razon (prej/real):  media {np.nanmean(raz):.2f}  "

@@ -1,11 +1,18 @@
 """Panel 2: como cambia N y por que. Panel 3: arquetipos (tipos.py).
 
-Responde tres preguntas que panel1.png no contesta:
+Responde dos preguntas que panel1.png no contesta:
   - crece la poblacion, se estanca, o esta pegada al tope N_max?
-  - cuando el tope actua, frena a TODOS por igual (no es una poda
-    dirigida a una minoria -- la seleccion pasa antes, por energia)
   - de las muertes, cuantas son "naturales" (edad_max) y cuantas por
-    energia negativa (inanicion / gasto de pelea)?
+    energia negativa (inanicion / gasto de pelea)? Esto le dice al lector
+    por que el diferencial de seleccion se mide en reproducir() (panel 7 de
+    panel1.png) y no en quien muere: si casi todas las muertes son por
+    edad, el canal real de seleccion es quien LLEGA a reproducirse, no
+    quien sobrevive.
+Se saco el panel de "el tope N_max frena nacimientos": es una pregunta
+binaria (se activo o no en la ventana medida) que no necesita un panel
+entero para responderse con una linea plana en cero -- ver el chequeo de
+texto correspondiente en analiza.py.
+
 Y si existe tipos.json (python tipos.py), una figura aparte con la
 fraccion de poblacion de cada arquetipo por ciclo, semilla por semilla
 -- sin promediar, porque la pregunta ahi es justamente si distintas
@@ -38,36 +45,18 @@ def poblacion(path="prejuicio.json", salida="panel2.png"):
     plt.rcParams.update({"figure.dpi": 130, "font.size": 9, "axes.grid": True,
                          "grid.alpha": .25, "axes.spines.top": False,
                          "axes.spines.right": False})
-    fig, ax = plt.subplots(1, 3, figsize=(15, 4.6))
+    fig, ax = plt.subplots(1, 2, figsize=(10.4, 4.6))
 
     a = ax[0]
     for i, r in enumerate(S):
         a.plot(r["n"], color=COL[i % len(COL)], lw=1, alpha=.5)
     a.plot(_media(S, "n"), color="#111111", lw=2.3, label="media")
     a.axhline(900, ls="--", c="#7f8c8d", lw=1, label="N_max")
-    a.set_xlabel("ciclo"); a.set_ylabel("N"); a.set_title("1. Tamaño de la población")
+    a.set_xlabel("ciclo"); a.set_ylabel("N")
+    a.set_title("1. Tamaño de la población\n(contexto: confirma que N_max no está limitando nada)")
     a.legend(frameon=False, fontsize=7)
 
     a = ax[1]
-    W = 30
-    rolls = []
-    for i, r in enumerate(S):
-        t = np.array(r["tope_nmax"], float)
-        if len(t) < W:
-            continue
-        roll = np.convolve(t, np.ones(W) / W, mode="valid")
-        a.plot(roll, color=COL[i % len(COL)], lw=1, alpha=.5)
-        rolls.append(roll)
-    if rolls:
-        L = min(len(x) for x in rolls)
-        media = np.nanmean(np.stack([x[:L] for x in rolls]), axis=0)
-        a.plot(media, color="#111111", lw=2.3, label="media")
-    a.set_ylim(-.03, 1.03)
-    a.set_xlabel("ciclo"); a.set_ylabel(f"fracción de ciclos con tope activo (ventana {W})")
-    a.set_title("2. ¿El techo N_max frena nacimientos?\nsi actúa, frena a TODOS por igual, no es selectivo")
-    a.legend(frameon=False, fontsize=7)
-
-    a = ax[2]
     fracs = []
     for r in S:
         me = np.array(r["murio_edad"], float)
@@ -83,7 +72,7 @@ def poblacion(path="prejuicio.json", salida="panel2.png"):
     a.fill_between(x, f_edad, 1, color="#c0392b", alpha=.55, label="murió por energía negativa")
     a.set_ylim(0, 1)
     a.set_xlabel("ciclo"); a.set_ylabel("fracción de las muertes")
-    a.set_title("3. Causa de muerte\npromedio entre semillas")
+    a.set_title("2. Causa de muerte\nsi domina edad, la selección real ocurre en reproducir(), no aquí")
     a.legend(frameon=False, fontsize=7, loc="upper right")
 
     fig.suptitle(f"Dinámica poblacional · {n} semillas", fontsize=11, y=1.02)
