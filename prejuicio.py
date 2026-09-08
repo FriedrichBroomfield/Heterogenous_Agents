@@ -9,12 +9,27 @@ def corre(marcas, ciclos=350, seed=0, gasto=1.5, var_tam=0.5):
     fruta = np.full(cfg.L, cfg.K_fruta)
     reg = dict(escalada=[],peleas=[],n=[],p0=[],w_cre=[],w_tes=[],olvido=[],tam=[],
                err_info=[],err_arb=[],prej_arb=[],real_arb=[],prej_info=[],
-               real_info=[],div_nidos=[],conf=[])
+               real_info=[],div_nidos=[],conf=[],repro_info=[],repro_arb=[])
     for c in range(ciclos):
         fruta = un_ciclo(pob, fruta, rng, reg)
+
+        # diferencial de seleccion: tasa de reproduccion REALIZADA por clase
+        # de marca, no la creencia sobre ella. Replica el criterio de
+        # reproducir() (coste_vivir/edad ya aplicados, N_max no) porque hay
+        # que medirlo ANTES de que reproducir() reordene los arreglos.
+        e_ef = pob.e - cfg.coste_vivir
+        edad_ef = pob.edad + 1
+        va_a_repro = (e_ef > 0) & (edad_ef <= cfg.edad_max) & (e_ef > cfg.e_repro)
+        cl, tg = pob.clase_tam(), pob.tag
+        def _tasa(mk):
+            return np.array([va_a_repro[mk == k].mean() if (mk == k).any() else np.nan
+                              for k in range(cfg.n_val)])
+        ri, ra = float(np.nanstd(_tasa(cl))), float(np.nanstd(_tasa(tg)))
+
         reproducir(pob, rng)
         if pob.n() < 10: break
         reg["n"].append(pob.n())
+        reg["repro_info"].append(ri); reg["repro_arb"].append(ra)
         for r,arr in (("p0",pob.p0),("w_cre",pob.w_cre),("w_tes",pob.w_tes),
                       ("olvido",pob.olvido),("tam",pob.tam)): reg[r].append(float(arr.mean()))
         if marcas:

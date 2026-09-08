@@ -10,6 +10,7 @@ import numpy as np
 def main(path="prejuicio.json"):
     R = json.load(open(path))
     S = R["con_marcas"]
+    S0 = R.get("sin_marcas", [])
     u = slice(-60, None)
 
     def m(x):
@@ -49,6 +50,22 @@ def main(path="prejuicio.json"):
     z = d_inf.mean() / (d_inf.std() / np.sqrt(len(d_inf)) + 1e-12)
     print(f"  media {d_inf.mean():+.4f}  z = {z:+.2f}  "
           f"({int((d_inf < 0).sum())}/{len(d_inf)} semillas sub-usan)")
+
+    print("\nDIFERENCIAL DE SELECCION (dispersion de tasa de reproduccion REALIZADA por clase)")
+    print("  esto no es creencia ni verdad de la pelea: es quien efectivamente")
+    print("  se reprodujo mas, por clase de marca, en cada ciclo.")
+    d_ri = np.array([m(r["repro_info"]) for r in S])
+    d_ra = np.array([m(r["repro_arb"]) for r in S])
+    print(f"  con marcas   informativa: media {np.nanmean(d_ri):.4f}  arbitraria: media {np.nanmean(d_ra):.4f}")
+    if S0:
+        d_ri0 = np.array([m(r["repro_info"]) for r in S0])
+        d_ra0 = np.array([m(r["repro_arb"]) for r in S0])
+        print(f"  sin marcas   informativa: media {np.nanmean(d_ri0):.4f}  arbitraria: media {np.nanmean(d_ra0):.4f}")
+        print("  [sin marcas = nulo: la disparidad que sobreviva sin comportamiento basado")
+        print("   en marcas es puramente estructural (tamano real, correlacion de linaje);")
+        print("   lo que con_marcas agrega por encima de esto es lo que el comportamiento causa]")
+    else:
+        print("  [no hay corrida sin_marcas en este json para comparar contra el nulo]")
 
     print("\nDOBLE CONTEO: peso del testimonio vs error sobre marca informativa")
     wt, ei = np.array(wt), np.array(ei)

@@ -26,7 +26,7 @@ def main(salida="panel1.png"):
     val = json.load(open("validacion.json"))
     S = json.load(open("prejuicio.json"))["con_marcas"]
     n = len(S)
-    fig, ax = plt.subplots(2, 3, figsize=(13.5, 7.2))
+    fig, ax = plt.subplots(3, 3, figsize=(13.5, 10.8))
     leg = dict(frameon=False, fontsize=7, ncol=min(4, n))
 
     a = ax[0, 0]
@@ -77,21 +77,51 @@ def main(salida="panel1.png"):
     a.set_title("5. Marca ARBITRARIA\nsobre cero = prejuicio injustificado")
     a.legend(**leg)
 
+    # Escalar es individualmente mejor pero, si todos lo hacen, mas
+    # encuentros se resuelven a pelea: energia perdida por los dos lados
+    # e injuria, no solo fruta repartida distinto. Esto es el costo a la
+    # convivencia que "tasa de escalada" (panel 2) no muestra.
     a = ax[1, 2]
+    for i, r in enumerate(S):
+        a.plot(suave(r["peleas"]), color=COL[i % len(COL)], lw=1, alpha=.8,
+               label=f"s{i}" if i < 4 else None)
+    a.set_xlabel("ciclo"); a.set_ylabel("fracción de encuentros")
+    a.set_title("6. Costo de convivencia\nencuentros que terminan en pelea")
+    a.legend(**leg)
+
+    # Disposiciones: separado por rasgo, no todos en el mismo eje. w_cre
+    # opera en una escala distinta (puede pasar de 1.0) a w_tes/olvido
+    # (acotados en [0,1]); mezclarlos aplastaba a los dos ultimos.
+    a = ax[2, 0]
+    for i, r in enumerate(S):
+        a.plot(suave(r["w_cre"]), color=COL[i % len(COL)], lw=1, alpha=.8,
+               label=f"s{i}" if i < 4 else None)
+    a.set_xlabel("ciclo"); a.set_ylabel("peso de la creencia")
+    a.set_title("7. Peso de la creencia"); a.legend(**leg)
+
+    a = ax[2, 1]
     for r in S:
-        a.plot(suave(r["w_tes"]), color="#2c3e50", lw=.9, alpha=.7)
-        a.plot(suave(r["w_cre"]), color="#8e44ad", lw=.9, alpha=.7)
-        a.plot(suave(r["olvido"]), color="#d35400", lw=.9, alpha=.7)
-    for c, l in (("#8e44ad", "peso de la creencia"),
-                 ("#2c3e50", "peso del testimonio"),
-                 ("#d35400", "tasa de olvido")):
-        a.plot([], [], color=c, label=l)
+        a.plot(suave(r["w_tes"]), color="#2c3e50", lw=.9, alpha=.6)
+        a.plot(suave(r["olvido"]), color="#d35400", lw=.9, alpha=.6)
+    a.plot([], [], color="#2c3e50", label="peso del testimonio")
+    a.plot([], [], color="#d35400", label="tasa de olvido")
     a.set_xlabel("ciclo"); a.set_ylabel("valor medio del rasgo")
-    a.set_title("6. Disposiciones (cada semilla aparte)")
+    a.set_title("8. Testimonio y olvido"); a.legend(frameon=False, fontsize=8)
+
+    # Diferencial de seleccion: no es creencia ni verdad de la pelea
+    # individual, es quien efectivamente se reprodujo mas por clase.
+    a = ax[2, 2]
+    for r in S:
+        a.plot(suave(r["repro_info"]), color="#27ae60", lw=.9, alpha=.6)
+        a.plot(suave(r["repro_arb"]), color="#e67e22", lw=.9, alpha=.6)
+    a.plot([], [], color="#27ae60", label="informativa")
+    a.plot([], [], color="#e67e22", label="arbitraria")
+    a.set_xlabel("ciclo"); a.set_ylabel("dispersión tasa de reproducción")
+    a.set_title("9. Diferencial de selección\npor clase de marca (realizado, no creído)")
     a.legend(frameon=False, fontsize=8)
 
-    fig.suptitle(f"Recolección de fruta · etapa 1 · {n} semillas", fontsize=11, y=.99)
-    fig.tight_layout(rect=[0, 0, 1, .96])
+    fig.suptitle(f"Recolección de fruta · etapa 1 · {n} semillas", fontsize=11, y=.995)
+    fig.tight_layout(rect=[0, 0, 1, .97])
     fig.savefig(salida, bbox_inches="tight")
     print(f"escrito {salida}")
 
