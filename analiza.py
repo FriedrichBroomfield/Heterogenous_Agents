@@ -96,6 +96,25 @@ def main(path="prejuicio.json"):
     if not algo:
         print("  todos los rasgos estables -> hay optimo interior")
 
+    print("\nESTABILIDAD DEL SESGO (prej-real, primer tercio vs ultimo tercio)")
+    print("  si el signo cambia entre tercios, el z de arriba describe un punto")
+    print("  de paso, no una conclusion -- no reportarlo como establecido.")
+    for nom, pk, rk in (("informativa", "prej_info", "real_info"),
+                         ("arbitraria", "prej_arb", "real_arb")):
+        prim, ult = [], []
+        for r in S:
+            d = np.array(r[pk], float) - np.array(r[rk], float)
+            t = len(d) // 3
+            if t == 0:
+                continue
+            prim.append(np.nanmean(d[:t])); ult.append(np.nanmean(d[-t:]))
+        if not prim:
+            continue
+        mp, mu = float(np.nanmean(prim)), float(np.nanmean(ult))
+        invertido = np.sign(mp) != np.sign(mu) and mp != 0 and mu != 0
+        print(f"  {nom:11s} primer tercio {mp:+.4f}  ultimo tercio {mu:+.4f}"
+              + ("  <-- CAMBIO DE SIGNO" if invertido else ""))
+
     print("\nESTRUCTURA DE NIDOS")
     for i, r in enumerate(S):
         d = np.array(r["div_nidos"], float)

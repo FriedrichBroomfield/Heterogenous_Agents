@@ -75,6 +75,14 @@ class Cfg:
 
     mut = 0.05             # sd de mutacion de rasgos
     n_val = 3              # valores por marca
+    disp_nido = 0.0        # frac. de crias que se van a un nido al azar en
+                            # vez de heredar el del progenitor. 0.0 = nido
+                            # es linaje puro (default, sin cambio de
+                            # comportamiento). >0 es una perilla de
+                            # diagnostico: si el colapso a un solo linaje es
+                            # deriva por ausencia total de dispersion, un
+                            # poco de dispersion deberia bastar para
+                            # mantener varios nidos poblados.
 
     marcas = True          # False -> validacion Halcon-Paloma
     ciclos = 400
@@ -272,7 +280,13 @@ def reproducir(pob, rng):
         m = rng.random(nh) < 0.02
         tag_h[m] = rng.integers(0, cfg.n_val, m.sum())
     pob.tag = np.concatenate([pob.tag[vive], tag_h]).astype(int)
-    pob.nido = np.concatenate([pob.nido[vive], pob.nido[hijos]]).astype(int)
+    # dispersion: por default la cria hereda el nido del progenitor sin
+    # excepcion (nido=linaje). disp_nido>0 reasigna una fraccion al azar.
+    nido_h = pob.nido[hijos].copy() if nh else np.array([], int)
+    if nh and cfg.disp_nido > 0:
+        disp = rng.random(nh) < cfg.disp_nido
+        nido_h[disp] = rng.integers(0, cfg.n_nidos, int(disp.sum()))
+    pob.nido = np.concatenate([pob.nido[vive], nido_h]).astype(int)
     pob.e = sel(pob.e)
     pob.edad = np.concatenate([pob.edad[vive], np.zeros(nh, int)])
     pob.lesionado = np.concatenate([pob.lesionado[vive], np.zeros(nh)])

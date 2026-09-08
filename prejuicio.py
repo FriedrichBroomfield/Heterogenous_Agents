@@ -2,8 +2,9 @@ import numpy as np, json
 from mundo import Cfg, Pob, un_ciclo, reproducir, medir_verdad
 
 
-def corre(marcas, ciclos=350, seed=0, gasto=1.5, var_tam=0.5):
+def corre(marcas, ciclos=350, seed=0, gasto=1.5, var_tam=0.5, disp_nido=0.0):
     cfg = Cfg(); cfg.marcas=marcas; cfg.gasto_pelea=gasto; cfg.ciclos=ciclos
+    cfg.disp_nido = disp_nido
     rng = np.random.default_rng(seed); pob = Pob(cfg, rng)
     pob.tam = np.clip(1+rng.normal(0,var_tam,pob.n()),0.3,3.0)
     fruta = np.full(cfg.L, cfg.K_fruta)

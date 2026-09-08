@@ -70,10 +70,11 @@ def etapa_validacion(rapido):
     return True
 
 
-def etapa_prejuicio(semillas, ciclos):
+def etapa_prejuicio(semillas, ciclos, disp_nido=0.0):
     import prejuicio
     print("=" * 68)
-    print(f"ETAPA 2/4  PREJUICIO  ({semillas} semillas x {ciclos} ciclos)")
+    print(f"ETAPA 2/4  PREJUICIO  ({semillas} semillas x {ciclos} ciclos"
+          + (f", disp_nido={disp_nido}" if disp_nido else "") + ")")
     print("  marca informativa = clase de tamaño, predice de verdad quién gana.")
     print("  marca arbitraria  = etiqueta heredable sin efecto causal, pero")
     print("                      correlacionada con el tamaño por linaje.")
@@ -85,7 +86,7 @@ def etapa_prejuicio(semillas, ciclos):
         R = []
         for s in range(semillas):
             t1 = time.time()
-            cfg, reg, pob = prejuicio.corre(mk, ciclos=ciclos, seed=s)
+            cfg, reg, pob = prejuicio.corre(mk, ciclos=ciclos, seed=s, disp_nido=disp_nido)
             R.append(reg)
             hecho += 1
             eta = (time.time() - t0) / hecho * (total - hecho)
@@ -108,6 +109,8 @@ def main():
     ap.add_argument("--test", action="store_true", help="~2 min, solo verifica")
     ap.add_argument("--semillas", type=int, default=None)
     ap.add_argument("--ciclos", type=int, default=None)
+    ap.add_argument("--disp_nido", type=float, default=0.0,
+                     help="frac. de crias que se van a un nido al azar (0=nido es linaje puro)")
     ap.add_argument("--saltar", default="", help="etapas a saltar, ej: 1")
     A = ap.parse_args()
 
@@ -129,7 +132,7 @@ def main():
         if not etapa_validacion(rapido):
             sys.exit(1)
     if 2 not in saltar:
-        etapa_prejuicio(semillas, ciclos)
+        etapa_prejuicio(semillas, ciclos, disp_nido=A.disp_nido)
 
     if 3 not in saltar:
         print("=" * 68)
