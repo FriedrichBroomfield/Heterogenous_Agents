@@ -28,7 +28,7 @@ def corre(marcas, ciclos=350, seed=0, gasto=1.5, var_tam=0.5, disp_nido=0.0):
                               for k in range(cfg.n_val)])
         ri, ra = float(np.nanstd(_tasa(cl))), float(np.nanstd(_tasa(tg)))
 
-        reproducir(pob, rng)
+        reproducir(pob, rng, reg)
         if pob.n() < 10: break
         reg["n"].append(pob.n())
         reg["repro_info"].append(ri); reg["repro_arb"].append(ra)

@@ -114,6 +114,7 @@ class Pob:
         self.tam = rng.uniform(0.7, 1.3, n)
         self.lesionado = np.zeros(n)
         self.tag = rng.integers(0, cfg.n_val, n)          # marca arbitraria
+        self.tipo = np.zeros(n, int)                      # arquetipo fundador (tipos.py)
         self.nido = rng.integers(0, cfg.n_nidos, n)
         self.e = np.full(n, cfg.e_ini)
         self.edad = np.zeros(n, int)
@@ -247,18 +248,38 @@ def un_ciclo(pob, fruta, rng, reg):
     return fruta
 
 
-def reproducir(pob, rng):
+def reproducir(pob, rng, reg=None):
+    """reg, si se pasa, recibe diagnosticos de POR QUE cambia N: cuantos
+    mueren por edad vs por energia (excluyentes: edad manda), cuantos nacen
+    realmente vs cuantos podrian haber nacido, y si el tope N_max bloqueo
+    nacimientos ese ciclo. El tope, cuando actua, frena TODO nacimiento por
+    igual -- no es una poda dirigida a ninguna minoria; la seleccion sobre
+    quien llega a reproducirse ocurre antes, via el umbral de energia."""
     cfg = pob.cfg
     pob.e -= cfg.coste_vivir
     pob.edad += 1
     pob.lesionado = np.maximum(0.0, pob.lesionado - cfg.recup)
 
     vive = (pob.e > 0) & (pob.edad <= cfg.edad_max)
-    hijos = np.flatnonzero(vive & (pob.e > cfg.e_repro))
-    if len(hijos) and vive.sum() < cfg.N_max:
-        hijos = hijos[:max(0, cfg.N_max - int(vive.sum()))]
+    if reg is not None:
+        murio_edad = (~vive) & (pob.edad > cfg.edad_max)
+        murio_energia = (~vive) & (pob.edad <= cfg.edad_max)
+        reg.setdefault("murio_edad", []).append(int(murio_edad.sum()))
+        reg.setdefault("murio_energia", []).append(int(murio_energia.sum()))
+
+    hijos_pot = np.flatnonzero(vive & (pob.e > cfg.e_repro))
+    if len(hijos_pot) and vive.sum() < cfg.N_max:
+        cupo = max(0, cfg.N_max - int(vive.sum()))
+        hijos = hijos_pot[:cupo]
+        tope = len(hijos_pot) > cupo
     else:
         hijos = np.array([], int)
+        tope = len(hijos_pot) > 0
+
+    if reg is not None:
+        reg.setdefault("n_nacidos", []).append(int(len(hijos)))
+        reg.setdefault("n_nacidos_potenciales", []).append(int(len(hijos_pot)))
+        reg.setdefault("tope_nmax", []).append(bool(tope))
 
     def sel(arr):
         return np.concatenate([arr[vive], arr[hijos]])
@@ -284,6 +305,10 @@ def reproducir(pob, rng):
         m = rng.random(nh) < 0.02
         tag_h[m] = rng.integers(0, cfg.n_val, m.sum())
     pob.tag = np.concatenate([pob.tag[vive], tag_h]).astype(int)
+    # tipo (arquetipo fundador): hereda sin mutar, para poder rastrear que
+    # fraccion de la poblacion desciende de cada combinacion inicial.
+    tipo_h = pob.tipo[hijos].copy() if nh else np.array([], int)
+    pob.tipo = np.concatenate([pob.tipo[vive], tipo_h]).astype(int)
     # dispersion: por default la cria hereda el nido del progenitor sin
     # excepcion (nido=linaje). disp_nido>0 reasigna una fraccion al azar.
     nido_h = pob.nido[hijos].copy() if nh else np.array([], int)
