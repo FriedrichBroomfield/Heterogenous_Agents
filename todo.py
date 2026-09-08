@@ -19,7 +19,6 @@ USO
   python todo.py --saltar 1       # reusa validacion.json existente
 
 Escribe validacion.json, prejuicio.json y panel1.png.
-Pegame la salida de consola completa y el panel.
 """
 import argparse, json, sys, time
 import numpy as np

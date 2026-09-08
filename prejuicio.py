@@ -11,7 +11,8 @@ def corre(marcas, ciclos=350, seed=0, gasto=1.5, var_tam=0.5, disp_nido=0.0):
     reg = dict(escalada=[],peleas=[],n=[],p0=[],w_cre=[],w_tes=[],olvido=[],tam=[],
                err_info=[],err_arb=[],prej_arb=[],real_arb=[],prej_info=[],
                real_info=[],div_nidos=[],conf=[],repro_info=[],repro_arb=[],
-               sd_p0=[],frac_halcon=[],frac_paloma=[])
+               sd_p0=[],frac_halcon=[],frac_paloma=[],
+               sd_w_cre=[],sd_w_tes=[],sd_olvido=[],sd_tam=[])
     for c in range(ciclos):
         fruta = un_ciclo(pob, fruta, rng, reg)
 
@@ -32,15 +33,19 @@ def corre(marcas, ciclos=350, seed=0, gasto=1.5, var_tam=0.5, disp_nido=0.0):
         if pob.n() < 10: break
         reg["n"].append(pob.n())
         reg["repro_info"].append(ri); reg["repro_arb"].append(ra)
+        # dispersion de rasgos DENTRO de la corrida (no entre semillas): la
+        # misma media puede ser una poblacion homogenea o una partida en dos
+        # extremos que promedian a lo mismo. La media sola no distingue una
+        # de la otra para NINGUN rasgo heredable, no solo p0.
         for r,arr in (("p0",pob.p0),("w_cre",pob.w_cre),("w_tes",pob.w_tes),
-                      ("olvido",pob.olvido),("tam",pob.tam)): reg[r].append(float(arr.mean()))
-        # divergencia de rasgos DENTRO de la corrida (no entre semillas). El
-        # equilibrio mixto de Halcon-Paloma admite dos soluciones con la MISMA
-        # media: todos juegan la estrategia mixta p*, o la poblacion se
-        # divide en halcones puros y palomas puras que promedian a p*. La
-        # media sola (lo unico que se registraba antes) no distingue una de
-        # la otra. sd_p0 y las fracciones en los extremos si.
-        reg["sd_p0"].append(float(pob.p0.std(ddof=1)) if pob.n() > 1 else 0.0)
+                      ("olvido",pob.olvido),("tam",pob.tam)):
+            reg[r].append(float(arr.mean()))
+            reg["sd_" + r].append(float(arr.std(ddof=1)) if pob.n() > 1 else 0.0)
+        # el equilibrio mixto de Halcon-Paloma en particular admite dos
+        # soluciones con la MISMA media de p0: todos juegan la estrategia
+        # mixta p*, o la poblacion se divide en halcones y palomas puros que
+        # promedian a p*. sd_p0 (ya cubierto arriba) mas las fracciones en
+        # los extremos distinguen cual de las dos es.
         reg["frac_halcon"].append(float((pob.p0 > 0.8).mean()))
         reg["frac_paloma"].append(float((pob.p0 < 0.2).mean()))
         if marcas:

@@ -126,6 +126,22 @@ def main(path="prejuicio.json"):
               f"ciclos con <2 nidos poblados: {nn}/{len(d)}"
               + ("  <-- linaje unico por tramos" if nn > 10 else ""))
 
+    print("\nDISPERSION DENTRO DE LA POBLACION (misma media, poblacion homogenea o partida?)")
+    print("  sd de cada rasgo ENTRE INDIVIDUOS de la misma corrida, ultimos 60 ciclos.")
+    print("  sd baja y estable = poblacion convergida a un valor. sd que no baja = el")
+    print("  rasgo sigue partido entre distintos tipos de agente, aunque la media sea fija.")
+    for nom, grupo in (("sin_marcas", S0), ("con_marcas", S)):
+        if not grupo:
+            continue
+        print(f"  {nom}:")
+        for i, r in enumerate(grupo):
+            faltan = [k for k in ("sd_w_cre", "sd_w_tes", "sd_olvido", "sd_tam") if k not in r or not r[k]]
+            if faltan:
+                print(f"    semilla {i}: (sin {','.join(faltan)}, json viejo -- correr de nuevo)")
+                continue
+            print(f"    semilla {i}: sd_w_cre={m(r['sd_w_cre']):.3f}  sd_w_tes={m(r['sd_w_tes']):.3f}  "
+                  f"sd_olvido={m(r['sd_olvido']):.3f}  sd_tam={m(r['sd_tam']):.3f}")
+
     print("\nDIVERGENCIA DE p0 DENTRO DE LA CORRIDA (halcon puro vs paloma pura vs mixta)")
     print("  el equilibrio mixto de Halcon-Paloma admite dos soluciones con la misma")
     print("  media: todos jugando la estrategia mixta p*, o la poblacion partida en")
