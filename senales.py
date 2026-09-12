@@ -61,6 +61,8 @@ if __name__ == "__main__":
               f"p_esc={np.mean(reg['p_esc'][u]):.3f}(sd={np.mean(reg['sd_p_esc'][u]):.3f})  "
               f"p_ced={np.mean(reg['p_ced'][u]):.3f}(sd={np.mean(reg['sd_p_ced'][u]):.3f})  "
               f"w_senal={np.mean(reg['w_senal'][u]):.3f}(sd={np.mean(reg['sd_w_senal'][u]):.3f})  "
-              f"P(escalo|mostro)={p_mostro:.3f}  P(escalo|no_mostro)={p_no:.3f}")
-    json.dump(out, open("senales.json", "w"))
+              f"P(escalo|mostro)={p_mostro:.3f}  P(escalo|no_mostro)={p_no:.3f}", flush=True)
+        # checkpoint por semilla: una corrida larga no deberia perder todo si
+        # el proceso muere a mitad de camino.
+        json.dump(out, open("senales.json", "w"))
     print("escrito senales.json")
