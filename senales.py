@@ -42,15 +42,24 @@ def corre(ciclos=2000, seed=0, gasto=1.5, var_tam=0.5, marcas=True, disp_nido=0.
 
 
 if __name__ == "__main__":
+    import os
     ap = argparse.ArgumentParser()
     ap.add_argument("--semillas", type=int, default=6)
     ap.add_argument("--ciclos", type=int, default=2000)
     ap.add_argument("--disp_nido", type=float, default=0.0)
+    ap.add_argument("--continuar", action="store_true",
+                     help="retomar desde senales.json existente en vez de "
+                          "empezar de cero -- el entorno se ha reiniciado a "
+                          "mitad de corridas largas mas de una vez.")
     A = ap.parse_args()
 
     out = []
+    if A.continuar and os.path.exists("senales.json"):
+        out = json.load(open("senales.json"))
+        print(f"retomando: {len(out)} semillas ya en senales.json", flush=True)
+
     u = slice(-100, None)
-    for s in range(A.semillas):
+    for s in range(len(out), A.semillas):
         cfg, reg, pob = corre(ciclos=A.ciclos, seed=s, disp_nido=A.disp_nido)
         out.append(reg)
         m = np.array(reg["mostro"][u]); me = np.array(reg["mostro_escalo"][u])
