@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+validacion.json
+prejuicio.json
+tipos.json
+senales.json
+panel1.png
+panel2.png
+panel3.png
+*.log
